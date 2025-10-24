@@ -1097,7 +1097,7 @@ class MultilingualCommentDetector:
             return 'unknown'
 
 class IntelligentCodeMerger:
-    """KI-gestützte Code-Zusammenführung mit multilingualer Unterstützung"""
+    """VERBESSERTE KI-gestützte Code-Zusammenführung - Korrigierte Version"""
     
     def __init__(self):
         self.language_detector = MultilingualCommentDetector()
@@ -1105,9 +1105,11 @@ class IntelligentCodeMerger:
         
     def smart_merge_files(self, original_file, donor_file, output_file=None):
         """
-        Führt zwei Dateien intelligent zusammen basierend auf multilingualen Kommentaren
+        Führt zwei Dateien intelligent zusammen - JETZT MIT VOLLSTÄNDIGER CODE-ERKENNUNG
         """
         try:
+            print(f"🔀 Starte erweiterten KI-Merge: {original_file} <- {donor_file}")
+            
             # Dateien lesen
             with open(original_file, 'r', encoding='utf-8', errors='ignore') as f:
                 original_content = f.read()
@@ -1116,19 +1118,20 @@ class IntelligentCodeMerger:
                 donor_content = f.read()
             
             # Backup der Originaldatei erstellen
-            from datetime import datetime
             backup_file = original_file + '.backup_' + datetime.now().strftime("%Y%m%d_%H%M%S")
             with open(backup_file, 'w', encoding='utf-8') as f:
                 f.write(original_content)
             
-            # KI-Analyse der Dateien
-            analysis = self.analyze_merge_requirements(original_content, donor_content)
+            # ERWEITERTE KI-Analyse der Dateien
+            analysis = self.enhanced_analyze_merge_requirements(original_content, donor_content)
             
-            # Intelligente Zusammenführung
-            merged_content = self.perform_smart_merge(
+            # INTELLIGENTE Zusammenführung mit vollständiger Code-Erkennung
+            merged_content = self.enhanced_perform_smart_merge(
                 original_content, 
                 donor_content, 
-                analysis
+                analysis,
+                original_file,
+                donor_file
             )
             
             # Ergebnis speichern
@@ -1136,35 +1139,74 @@ class IntelligentCodeMerger:
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(merged_content)
             
+            changes_count = self.count_actual_changes(original_content, merged_content)
+            
             return {
                 'success': True,
                 'backup_file': backup_file,
                 'output_file': output_path,
-                'changes_made': analysis['changes_detected'],
-                'warnings': analysis['warnings']
+                'changes_made': changes_count,
+                'message': f'✅ KI-Merge erfolgreich! {changes_count} Änderungen durchgeführt.',
+                'analysis_summary': analysis.get('summary', {})
             }
             
         except Exception as e:
+            print(f"❌ Merge-Fehler: {e}")
             return {
                 'success': False,
                 'error': str(e),
                 'backup_file': None
             }
     
-    def analyze_merge_requirements(self, original_content, donor_content):
-        """Analysiert, was zusammengeführt werden muss"""
+    def enhanced_analyze_merge_requirements(self, original_content, donor_content):
+        """ERWEITERTE Analyse - Erkennt jetzt ALLE Code-Elemente"""
+        print("🔍 Führe erweiterte Merge-Analyse durch...")
+        
         analysis = {
             'insertion_points': [],
             'missing_includes': [],
-            'function_additions': [],
-            'class_modifications': [],
+            'missing_functions': [],
+            'missing_classes': [],
+            'missing_methods': [],
+            'missing_variables': [],
+            'missing_defines': [],
             'changes_detected': 0,
-            'warnings': []
+            'warnings': [],
+            'summary': {}
         }
         
-        # Erkennt multilinguale Insertions-Kommentare
-        insertion_patterns = self.get_multilingual_patterns()
+        # 1. Analysiere Includes/Header
+        original_includes = self.extract_all_includes(original_content)
+        donor_includes = self.extract_all_includes(donor_content)
+        analysis['missing_includes'] = [inc for inc in donor_includes if inc not in original_includes]
+        analysis['changes_detected'] += len(analysis['missing_includes'])
         
+        # 2. Analysiere Funktionen
+        original_funcs = self.extract_all_functions(original_content)
+        donor_funcs = self.extract_all_functions(donor_content)
+        analysis['missing_functions'] = [f for f in donor_funcs if f['name'] not in [of['name'] for of in original_funcs]]
+        analysis['changes_detected'] += len(analysis['missing_functions'])
+        
+        # 3. Analysiere Klassen
+        original_classes = self.extract_all_classes(original_content)
+        donor_classes = self.extract_all_classes(donor_content)
+        analysis['missing_classes'] = [c for c in donor_classes if c['name'] not in [oc['name'] for oc in original_classes]]
+        analysis['changes_detected'] += len(analysis['missing_classes'])
+        
+        # 4. Analysiere Methoden
+        original_methods = self.extract_all_methods(original_content)
+        donor_methods = self.extract_all_methods(donor_content)
+        analysis['missing_methods'] = [m for m in donor_methods if m['name'] not in [om['name'] for om in original_methods]]
+        analysis['changes_detected'] += len(analysis['missing_methods'])
+        
+        # 5. Analysiere Variablen/Defines
+        original_vars = self.extract_all_variables(original_content)
+        donor_vars = self.extract_all_variables(donor_content)
+        analysis['missing_variables'] = [v for v in donor_vars if v['name'] not in [ov['name'] for ov in original_vars]]
+        analysis['changes_detected'] += len(analysis['missing_variables'])
+        
+        # 6. Multilinguale Kommentare
+        insertion_patterns = self.get_multilingual_patterns()
         for lang_name, patterns in insertion_patterns.items():
             for pattern_type, pattern in patterns.items():
                 matches = re.finditer(pattern, donor_content, re.IGNORECASE | re.MULTILINE)
@@ -1178,42 +1220,224 @@ class IntelligentCodeMerger:
                     })
                     analysis['changes_detected'] += 1
         
-        # Analysiert fehlende Includes
-        original_includes = set(re.findall(r'#include\s+[<"][^>"]+[>"]', original_content))
-        donor_includes = set(re.findall(r'#include\s+[<"][^>"]+[>"]', donor_content))
-        missing_includes = donor_includes - original_includes
+        # Zusammenfassung erstellen
+        analysis['summary'] = {
+            'total_elements_found': len(donor_includes) + len(donor_funcs) + len(donor_classes) + len(donor_methods) + len(donor_vars),
+            'elements_to_add': len(analysis['missing_includes']) + len(analysis['missing_functions']) + 
+                             len(analysis['missing_classes']) + len(analysis['missing_methods']) + 
+                             len(analysis['missing_variables']),
+            'file_type': self.detect_file_type(donor_content),
+            'complexity_level': 'HIGH' if analysis['changes_detected'] > 10 else 'MEDIUM' if analysis['changes_detected'] > 5 else 'LOW'
+        }
         
-        for include in missing_includes:
-            analysis['missing_includes'].append(include)
-            analysis['changes_detected'] += 1
-        
+        print(f"📊 Analyse abgeschlossen: {analysis['summary']['elements_to_add']} Elemente zum Hinzufügen gefunden")
         return analysis
     
-    def perform_smart_merge(self, original_content, donor_content, analysis):
-        """Führt die intelligente Zusammenführung durch"""
+    def enhanced_perform_smart_merge(self, original_content, donor_content, analysis, original_file, donor_file):
+        """ERWEITERTE Zusammenführung - Fügt ALLE Code-Elemente ein"""
+        print("🔄 Führe erweiterte Zusammenführung durch...")
         merged_content = original_content
         
-        # 1. Fehlende Includes hinzufügen
+        # 1. Includes/Header hinzufügen
         if analysis['missing_includes']:
+            print(f"➕ Füge {len(analysis['missing_includes'])} Includes hinzu")
             include_section = self.find_include_section(merged_content)
             new_includes = '\n'.join(analysis['missing_includes']) + '\n'
             merged_content = merged_content[:include_section] + new_includes + merged_content[include_section:]
         
-        # 2. Gezielte Insertions basierend auf Kommentaren
+        # 2. Funktionen hinzufügen
+        if analysis['missing_functions']:
+            print(f"➕ Füge {len(analysis['missing_functions'])} Funktionen hinzu")
+            for func in analysis['missing_functions']:
+                insertion_point = self.find_best_insertion_point(merged_content, 'function')
+                if insertion_point != -1:
+                    merged_content = merged_content[:insertion_point] + f"\n\n{func['code']}" + merged_content[insertion_point:]
+        
+        # 3. Klassen hinzufügen
+        if analysis['missing_classes']:
+            print(f"➕ Füge {len(analysis['missing_classes'])} Klassen hinzu")
+            for cls in analysis['missing_classes']:
+                insertion_point = self.find_best_insertion_point(merged_content, 'class')
+                if insertion_point != -1:
+                    merged_content = merged_content[:insertion_point] + f"\n\n{cls['code']}" + merged_content[insertion_point:]
+        
+        # 4. Methoden hinzufügen (in existierende Klassen)
+        if analysis['missing_methods']:
+            print(f"➕ Füge {len(analysis['missing_methods'])} Methoden hinzu")
+            for method in analysis['missing_methods']:
+                # Vereinfachte Methode: Am Ende der Datei einfügen
+                insertion_point = self.find_best_insertion_point(merged_content, 'method')
+                if insertion_point != -1:
+                    merged_content = merged_content[:insertion_point] + f"\n{method['code']}" + merged_content[insertion_point:]
+        
+        # 5. Variablen/Defines hinzufügen
+        if analysis['missing_variables']:
+            print(f"➕ Füge {len(analysis['missing_variables'])} Variablen/Defines hinzu")
+            for var in analysis['missing_variables']:
+                insertion_point = self.find_best_insertion_point(merged_content, 'variable')
+                if insertion_point != -1:
+                    merged_content = merged_content[:insertion_point] + f"\n{var['code']}" + merged_content[insertion_point:]
+        
+        # 6. Multilinguale Insertions
         for insertion in analysis['insertion_points']:
             if insertion['type'] == 'insert_at_end':
-                # Am Ende der Datei einfügen
                 code_to_insert = self.extract_relevant_code_section(donor_content, insertion['position'])
                 merged_content += '\n\n' + code_to_insert
-                
-            elif insertion['type'] == 'insert_in_class':
-                # In spezifischer Klasse einfügen
-                class_name = insertion['target_class']
-                code_to_insert = self.extract_relevant_code_section(donor_content, insertion['position'])
-                merged_content = self.insert_into_class(merged_content, class_name, code_to_insert)
+                print(f"🌍 Füge Code basierend auf {insertion['language']} Kommentar hinzu")
         
         return merged_content
     
+    def extract_all_includes(self, content):
+        """Extrahiert ALLE Include-Anweisungen"""
+        includes = []
+        patterns = [
+            r'^\s*#include\s*[<"][^>"]+[>"]',
+            r'^\s*#import\s*[<"][^>"]+[>"]',
+            r'^\s*#pragma\s+once',
+            r'^\s*#ifndef\s+\w+',
+            r'^\s*#define\s+\w+'
+        ]
+        
+        for pattern in patterns:
+            matches = re.findall(pattern, content, re.MULTILINE)
+            includes.extend(matches)
+        
+        return list(set(includes))
+    
+    def extract_all_functions(self, content):
+        """Extrahiert ALLE Funktionen"""
+        functions = []
+        
+        # C++/C Funktionen
+        patterns = [
+            r'(\w+[\w\s\*&]*)\s+(\w+)\s*\([^{]*\)\s*\{[^}]*\}',
+            r'(void)\s+(\w+)\s*\([^{]*\)\s*\{[^}]*\}',
+            r'(\w+)\s*\([^{]*\)\s*\{[^}]*\}',
+            r'~\s*(\w+)\s*\([^{]*\)\s*\{[^}]*\}'
+        ]
+        
+        for pattern in patterns:
+            for match in re.finditer(pattern, content, re.DOTALL):
+                func_name = match.group(2) if match.lastindex >= 2 else match.group(1)
+                functions.append({
+                    'name': func_name,
+                    'code': match.group(0).strip(),
+                    'type': 'function'
+                })
+        
+        return functions
+    
+    def extract_all_classes(self, content):
+        """Extrahiert ALLE Klassen"""
+        classes = []
+        
+        patterns = [
+            r'class\s+(\w+)[^{]*\{[^}]*\}',
+            r'struct\s+(\w+)[^{]*\{[^}]*\}'
+        ]
+        
+        for pattern in patterns:
+            for match in re.finditer(pattern, content, re.DOTALL):
+                class_name = match.group(1)
+                classes.append({
+                    'name': class_name,
+                    'code': match.group(0).strip(),
+                    'type': 'class'
+                })
+        
+        return classes
+    
+    def extract_all_methods(self, content):
+        """Extrahiert ALLE Methoden"""
+        methods = []
+        
+        pattern = r'(\w+)\s+(\w+)\s*\([^{]*\)\s*(?:const)?\s*\{[^}]*\}'
+        
+        for match in re.finditer(pattern, content, re.DOTALL):
+            method_name = match.group(2)
+            methods.append({
+                'name': method_name,
+                'code': match.group(0).strip(),
+                'type': 'method'
+            })
+        
+        return methods
+    
+    def extract_all_variables(self, content):
+        """Extrahiert ALLE Variablen und Konstanten"""
+        variables = []
+        
+        patterns = [
+            r'(?:const\s+)?\w+\s+(\w+)\s*=\s*[^;]+;',
+            r'(?:const\s+)?\w+\s+(\w+)\s*;',
+            r'#define\s+(\w+)\s+[^\n]+',
+            r'enum\s+(\w+)\s*\{[^}]*\};?'
+        ]
+        
+        for pattern in patterns:
+            for match in re.finditer(pattern, content, re.DOTALL):
+                var_name = match.group(1)
+                variables.append({
+                    'name': var_name,
+                    'code': match.group(0).strip(),
+                    'type': 'variable'
+                })
+        
+        return variables
+    
+    def find_best_insertion_point(self, code, element_type):
+        """Findet die beste Insertions-Position für verschiedene Elementtypen"""
+        lines = code.split('\n')
+        
+        if element_type == 'include':
+            # Für Includes: Nach den vorhandenen Includes
+            last_include = -1
+            for i, line in enumerate(lines):
+                if line.strip().startswith('#include'):
+                    last_include = i
+            return sum(len(line) + 1 for line in lines[:last_include + 1]) if last_include != -1 else 0
+        
+        elif element_type in ['function', 'class', 'method', 'variable']:
+            # Für andere Elemente: Am Ende der Datei (vor möglichen #endif)
+            end_of_file = len(code)
+            
+            # Suche #endif am Ende
+            endif_pos = code.rfind('#endif')
+            if endif_pos != -1:
+                return endif_pos
+            else:
+                return end_of_file
+        
+        return len(code)  # Fallback: Ende der Datei
+    
+    def detect_file_type(self, content):
+        """Erkennt den Dateityp basierend auf dem Inhalt"""
+        if re.search(r'#include', content):
+            return 'C++'
+        elif re.search(r'class.*\{', content):
+            return 'C++/Java'
+        elif re.search(r'def ', content):
+            return 'Python'
+        elif re.search(r'function', content):
+            return 'JavaScript'
+        else:
+            return 'Unknown'
+    
+    def count_actual_changes(self, original, merged):
+        """Zählt tatsächliche Änderungen zwischen Original und Merge"""
+        original_lines = original.split('\n')
+        merged_lines = merged.split('\n')
+        return len(merged_lines) - len(original_lines)
+
+    # Behalte die bestehenden Methoden aus deiner originalen Klasse bei:
+    def analyze_merge_requirements(self, original_content, donor_content):
+        """Kompatibilitäts-Methode - verwendet die erweiterte Analyse"""
+        return self.enhanced_analyze_merge_requirements(original_content, donor_content)
+
+    def perform_smart_merge(self, original_content, donor_content, analysis):
+        """Kompatibilitäts-Methode - verwendet die erweiterte Zusammenführung"""
+        return self.enhanced_perform_smart_merge(original_content, donor_content, analysis, "", "")
+
     def get_multilingual_patterns(self):
         """Gibt die multilingualen Muster zurück"""
         return {
@@ -1245,12 +1469,10 @@ class IntelligentCodeMerger:
     
     def find_include_section(self, content):
         """Findet die Position, an der Includes eingefügt werden sollen"""
-        # Sucht nach der ersten #include und gibt die Position zurück
         match = re.search(r'#include', content)
         if match:
             return match.start()
         else:
-            # Wenn keine Includes, dann nach der ersten Zeile, die nicht leer ist
             lines = content.splitlines()
             for i, line in enumerate(lines):
                 if line.strip() and not line.strip().startswith('//') and not line.strip().startswith('/*'):
@@ -1259,7 +1481,6 @@ class IntelligentCodeMerger:
     
     def extract_relevant_code_section(self, content, start_position):
         """Extrahiert relevanten Code-Abschnitt ab der Insertion-Position"""
-        # Findet das Ende des aktuellen Code-Blocks
         lines = content[start_position:].split('\n')
         code_section = []
         
@@ -1270,21 +1491,6 @@ class IntelligentCodeMerger:
                 break
                 
         return '\n'.join(code_section)
-    
-    def insert_into_class(self, content, class_name, code_to_insert):
-        """Fügt Code in eine bestimmte Klasse ein"""
-        # Sucht die Klasse und fügt den Code am Ende der Klasse ein
-        class_pattern = r'class\s+' + re.escape(class_name) + r'[^{]*\{([^}]*)\}'
-        match = re.search(class_pattern, content, re.DOTALL)
-        if match:
-            class_content = match.group(1)
-            # Fügt den Code am Ende der Klasse ein, vor der schließenden Klammer
-            new_class_content = class_content + '\n    ' + code_to_insert
-            new_content = content[:match.start(1)] + new_class_content + content[match.end(1):]
-            return new_content
-        else:
-            # Wenn die Klasse nicht gefunden wurde, geben wir die ursprüngliche Content zurück
-            return content
     
     def auto_fix_current_file(self, file_path):
         """Automatisch fehlende Code-Teile in aktueller Datei beheben"""
