@@ -17,160 +17,6 @@ import json
 import random
 from datetime import datetime
 
-class IntelligentCodeMerger:
-    """KI-gestützte Code-Zusammenführung mit multilingualer Unterstützung"""
-    
-    def __init__(self):
-        self.language_detector = MultilingualCommentDetector()
-        self.code_analyzer = NeuralCodeAnalyzer()
-        
-    def smart_merge_files(self, original_file, donor_file, output_file=None):
-        """
-        Führt zwei Dateien intelligent zusammen basierend auf multilingualen Kommentaren
-        """
-        try:
-            # Dateien lesen
-            with open(original_file, 'r', encoding='utf-8', errors='ignore') as f:
-                original_content = f.read()
-                
-            with open(donor_file, 'r', encoding='utf-8', errors='ignore') as f:
-                donor_content = f.read()
-            
-            # Backup der Originaldatei erstellen
-            backup_file = original_file + '.backup_' + datetime.now().strftime("%Y%m%d_%H%M%S")
-            with open(backup_file, 'w', encoding='utf-8') as f:
-                f.write(original_content)
-            
-            # KI-Analyse der Dateien
-            analysis = self.analyze_merge_requirements(original_content, donor_content)
-            
-            # Intelligente Zusammenführung
-            merged_content = self.perform_smart_merge(
-                original_content, 
-                donor_content, 
-                analysis
-            )
-            
-            # Ergebnis speichern
-            output_path = output_file or original_file
-            with open(output_path, 'w', encoding='utf-8') as f:
-                f.write(merged_content)
-            
-            return {
-                'success': True,
-                'backup_file': backup_file,
-                'output_file': output_path,
-                'changes_made': analysis['changes_detected'],
-                'warnings': analysis['warnings']
-            }
-            
-        except Exception as e:
-            return {
-                'success': False,
-                'error': str(e),
-                'backup_file': None
-            }
-    
-    def analyze_merge_requirements(self, original_content, donor_content):
-        """Analysiert, was zusammengeführt werden muss"""
-        analysis = {
-            'insertion_points': [],
-            'missing_includes': [],
-            'function_additions': [],
-            'class_modifications': [],
-            'changes_detected': 0,
-            'warnings': []
-        }
-        
-        # Erkennt multilinguale Insertions-Kommentare
-        insertion_patterns = self.get_multilingual_patterns()
-        
-        for lang_name, patterns in insertion_patterns.items():
-            for pattern_type, pattern in patterns.items():
-                matches = re.finditer(pattern, donor_content, re.IGNORECASE | re.MULTILINE)
-                for match in matches:
-                    analysis['insertion_points'].append({
-                        'language': lang_name,
-                        'type': pattern_type,
-                        'position': match.start(),
-                        'match_text': match.group(),
-                        'target_class': match.group(1) if match.groups() else None
-                    })
-                    analysis['changes_detected'] += 1
-        
-        # Analysiert fehlende Includes
-        original_includes = set(re.findall(r'#include\s+[<"][^>"]+[>"]', original_content))
-        donor_includes = set(re.findall(r'#include\s+[<"][^>"]+[>"]', donor_content))
-        missing_includes = donor_includes - original_includes
-        
-        for include in missing_includes:
-            analysis['missing_includes'].append(include)
-            analysis['changes_detected'] += 1
-        
-        return analysis
-    
-    def perform_smart_merge(self, original_content, donor_content, analysis):
-        """Führt die intelligente Zusammenführung durch"""
-        merged_content = original_content
-        
-        # 1. Fehlende Includes hinzufügen
-        if analysis['missing_includes']:
-            include_section = self.find_include_section(merged_content)
-            new_includes = '\n'.join(analysis['missing_includes']) + '\n'
-            merged_content = merged_content[:include_section] + new_includes + merged_content[include_section:]
-        
-        # 2. Gezielte Insertions basierend auf Kommentaren
-        for insertion in analysis['insertion_points']:
-            if insertion['type'] == 'insert_at_end':
-                # Am Ende der Datei einfügen
-                code_to_insert = self.extract_relevant_code_section(donor_content, insertion['position'])
-                merged_content += '\n\n' + code_to_insert
-                
-            elif insertion['type'] == 'insert_in_class':
-                # In spezifischer Klasse einfügen
-                class_name = insertion['target_class']
-                code_to_insert = self.extract_relevant_code_section(donor_content, insertion['position'])
-                merged_content = self.insert_into_class(merged_content, class_name, code_to_insert)
-        
-        return merged_content
-    
-    def extract_relevant_code_section(self, content, start_position):
-        """Extrahiert relevanten Code-Abschnitt ab der Insertion-Position"""
-        # Findet das Ende des aktuellen Code-Blocks
-        lines = content[start_position:].split('\n')
-        code_section = []
-        
-        for line in lines:
-            if line.strip() and not line.strip().startswith('/*') and not line.strip().startswith('//'):
-                code_section.append(line)
-            elif len(code_section) > 0:
-                break
-                
-        return '\n'.join(code_section)
-
-class MultilingualCommentDetector:
-    """Erkennt und versteht Kommentare in verschiedenen Sprachen"""
-    
-    def detect_comment_language(self, comment_text):
-        """Erkennt die Sprache eines Kommentars"""
-        german_indicators = ['einfügen', 'hier', 'ende', 'klasse', 'ersetze']
-        english_indicators = ['insert', 'here', 'end', 'class', 'replace']
-        turkish_indicators = ['ekle', 'buraya', 'sonuna', 'sınıf', 'değiştir']
-        spanish_indicators = ['insertar', 'aquí', 'final', 'clase', 'reemplazar']
-        
-        comment_lower = comment_text.lower()
-        
-        if any(word in comment_lower for word in german_indicators):
-            return 'german'
-        elif any(word in comment_lower for word in english_indicators):
-            return 'english'
-        elif any(word in comment_lower for word in turkish_indicators):
-            return 'turkish'
-        elif any(word in comment_lower for word in spanish_indicators):
-            return 'spanish'
-        else:
-            return 'unknown'
-
 class NeuralCodeAnalyzer:
     """Advanced neural network-based code analysis"""
     
@@ -1227,6 +1073,261 @@ body {{
 
 # File content goes here
 '''
+class MultilingualCommentDetector:
+    """Erkennt und versteht Kommentare in verschiedenen Sprachen"""
+    
+    def detect_comment_language(self, comment_text):
+        """Erkennt die Sprache eines Kommentars"""
+        german_indicators = ['einfügen', 'hier', 'ende', 'klasse', 'ersetze']
+        english_indicators = ['insert', 'here', 'end', 'class', 'replace']
+        turkish_indicators = ['ekle', 'buraya', 'sonuna', 'sınıf', 'değiştir']
+        spanish_indicators = ['insertar', 'aquí', 'final', 'clase', 'reemplazar']
+        
+        comment_lower = comment_text.lower()
+        
+        if any(word in comment_lower for word in german_indicators):
+            return 'german'
+        elif any(word in comment_lower for word in english_indicators):
+            return 'english'
+        elif any(word in comment_lower for word in turkish_indicators):
+            return 'turkish'
+        elif any(word in comment_lower for word in spanish_indicators):
+            return 'spanish'
+        else:
+            return 'unknown'
+
+class IntelligentCodeMerger:
+    """KI-gestützte Code-Zusammenführung mit multilingualer Unterstützung"""
+    
+    def __init__(self):
+        self.language_detector = MultilingualCommentDetector()
+        self.code_analyzer = NeuralCodeAnalyzer()
+        
+    def smart_merge_files(self, original_file, donor_file, output_file=None):
+        """
+        Führt zwei Dateien intelligent zusammen basierend auf multilingualen Kommentaren
+        """
+        try:
+            # Dateien lesen
+            with open(original_file, 'r', encoding='utf-8', errors='ignore') as f:
+                original_content = f.read()
+                
+            with open(donor_file, 'r', encoding='utf-8', errors='ignore') as f:
+                donor_content = f.read()
+            
+            # Backup der Originaldatei erstellen
+            from datetime import datetime
+            backup_file = original_file + '.backup_' + datetime.now().strftime("%Y%m%d_%H%M%S")
+            with open(backup_file, 'w', encoding='utf-8') as f:
+                f.write(original_content)
+            
+            # KI-Analyse der Dateien
+            analysis = self.analyze_merge_requirements(original_content, donor_content)
+            
+            # Intelligente Zusammenführung
+            merged_content = self.perform_smart_merge(
+                original_content, 
+                donor_content, 
+                analysis
+            )
+            
+            # Ergebnis speichern
+            output_path = output_file or original_file
+            with open(output_path, 'w', encoding='utf-8') as f:
+                f.write(merged_content)
+            
+            return {
+                'success': True,
+                'backup_file': backup_file,
+                'output_file': output_path,
+                'changes_made': analysis['changes_detected'],
+                'warnings': analysis['warnings']
+            }
+            
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e),
+                'backup_file': None
+            }
+    
+    def analyze_merge_requirements(self, original_content, donor_content):
+        """Analysiert, was zusammengeführt werden muss"""
+        analysis = {
+            'insertion_points': [],
+            'missing_includes': [],
+            'function_additions': [],
+            'class_modifications': [],
+            'changes_detected': 0,
+            'warnings': []
+        }
+        
+        # Erkennt multilinguale Insertions-Kommentare
+        insertion_patterns = self.get_multilingual_patterns()
+        
+        for lang_name, patterns in insertion_patterns.items():
+            for pattern_type, pattern in patterns.items():
+                matches = re.finditer(pattern, donor_content, re.IGNORECASE | re.MULTILINE)
+                for match in matches:
+                    analysis['insertion_points'].append({
+                        'language': lang_name,
+                        'type': pattern_type,
+                        'position': match.start(),
+                        'match_text': match.group(),
+                        'target_class': match.group(1) if match.groups() else None
+                    })
+                    analysis['changes_detected'] += 1
+        
+        # Analysiert fehlende Includes
+        original_includes = set(re.findall(r'#include\s+[<"][^>"]+[>"]', original_content))
+        donor_includes = set(re.findall(r'#include\s+[<"][^>"]+[>"]', donor_content))
+        missing_includes = donor_includes - original_includes
+        
+        for include in missing_includes:
+            analysis['missing_includes'].append(include)
+            analysis['changes_detected'] += 1
+        
+        return analysis
+    
+    def perform_smart_merge(self, original_content, donor_content, analysis):
+        """Führt die intelligente Zusammenführung durch"""
+        merged_content = original_content
+        
+        # 1. Fehlende Includes hinzufügen
+        if analysis['missing_includes']:
+            include_section = self.find_include_section(merged_content)
+            new_includes = '\n'.join(analysis['missing_includes']) + '\n'
+            merged_content = merged_content[:include_section] + new_includes + merged_content[include_section:]
+        
+        # 2. Gezielte Insertions basierend auf Kommentaren
+        for insertion in analysis['insertion_points']:
+            if insertion['type'] == 'insert_at_end':
+                # Am Ende der Datei einfügen
+                code_to_insert = self.extract_relevant_code_section(donor_content, insertion['position'])
+                merged_content += '\n\n' + code_to_insert
+                
+            elif insertion['type'] == 'insert_in_class':
+                # In spezifischer Klasse einfügen
+                class_name = insertion['target_class']
+                code_to_insert = self.extract_relevant_code_section(donor_content, insertion['position'])
+                merged_content = self.insert_into_class(merged_content, class_name, code_to_insert)
+        
+        return merged_content
+    
+    def get_multilingual_patterns(self):
+        """Gibt die multilingualen Muster zurück"""
+        return {
+            'german': {
+                'insert_here': r'/\*\s*HIER\s*EINFÜGEN\s*\*/|\/\/\s*HIER\s*EINFÜGEN',
+                'insert_at_end': r'/\*\s*AM\s*ENDE\s*EINFÜGEN\s*\*/|\/\/\s*AM\s*ENDE\s*EINFÜGEN',
+                'insert_in_class': r'/\*\s*IN\s+KLASSE\s+([^\*]+)\s*EINFÜGEN\s*\*/',
+                'replace_section': r'/\*\s*ERSETZE\s*AB\s*HIER\s*\*/'
+            },
+            'english': {
+                'insert_here': r'/\*\s*INSERT\s*HERE\s*\*/|\/\/\s*INSERT\s*HERE',
+                'insert_at_end': r'/\*\s*INSERT\s*AT\s*END\s*\*/|\/\/\s*INSERT\s*AT\s*END',
+                'insert_in_class': r'/\*\s*INSERT\s+IN\s+CLASS\s+([^\*]+)\s*\*/',
+                'replace_section': r'/\*\s*REPLACE\s*FROM\s*HERE\s*\*/'
+            },
+            'turkish': {
+                'insert_here': r'/\*\s*BURAYA\s*EKLE\s*\*/|\/\/\s*BURAYA\s*EKLE',
+                'insert_at_end': r'/\*\s*SONUNA\s*EKLE\s*\*/|\/\/\s*SONUNA\s*EKLE',
+                'insert_in_class': r'/\*\s*SINIF\s+İÇİNE\s+EKLE\s+([^\*]+)\s*\*/',
+                'replace_section': r'/\*\s*BURADAN\s*DEĞİŞTİR\s*\*/'
+            },
+            'spanish': {
+                'insert_here': r'/\*\s*INSERTAR\s*AQUÍ\s*\*/|\/\/\s*INSERTAR\s*AQUÍ',
+                'insert_at_end': r'/\*\s*INSERTAR\s*AL\s*FINAL\s*\*/|\/\/\s*INSERTAR\s*AL\s*FINAL',
+                'insert_in_class': r'/\*\s*INSERTAR\s+EN\s+CLASE\s+([^\*]+)\s*\*/',
+                'replace_section': r'/\*\s*REEMPLAZAR\s*DESDE\s*AQUÍ\s*\*/'
+            }
+        }
+    
+    def find_include_section(self, content):
+        """Findet die Position, an der Includes eingefügt werden sollen"""
+        # Sucht nach der ersten #include und gibt die Position zurück
+        match = re.search(r'#include', content)
+        if match:
+            return match.start()
+        else:
+            # Wenn keine Includes, dann nach der ersten Zeile, die nicht leer ist
+            lines = content.splitlines()
+            for i, line in enumerate(lines):
+                if line.strip() and not line.strip().startswith('//') and not line.strip().startswith('/*'):
+                    return len('\n'.join(lines[:i]))
+            return 0
+    
+    def extract_relevant_code_section(self, content, start_position):
+        """Extrahiert relevanten Code-Abschnitt ab der Insertion-Position"""
+        # Findet das Ende des aktuellen Code-Blocks
+        lines = content[start_position:].split('\n')
+        code_section = []
+        
+        for line in lines:
+            if line.strip() and not line.strip().startswith('/*') and not line.strip().startswith('//'):
+                code_section.append(line)
+            elif len(code_section) > 0:
+                break
+                
+        return '\n'.join(code_section)
+    
+    def insert_into_class(self, content, class_name, code_to_insert):
+        """Fügt Code in eine bestimmte Klasse ein"""
+        # Sucht die Klasse und fügt den Code am Ende der Klasse ein
+        class_pattern = r'class\s+' + re.escape(class_name) + r'[^{]*\{([^}]*)\}'
+        match = re.search(class_pattern, content, re.DOTALL)
+        if match:
+            class_content = match.group(1)
+            # Fügt den Code am Ende der Klasse ein, vor der schließenden Klammer
+            new_class_content = class_content + '\n    ' + code_to_insert
+            new_content = content[:match.start(1)] + new_class_content + content[match.end(1):]
+            return new_content
+        else:
+            # Wenn die Klasse nicht gefunden wurde, geben wir die ursprüngliche Content zurück
+            return content
+    
+    def auto_fix_current_file(self, file_path):
+        """Automatisch fehlende Code-Teile in aktueller Datei beheben"""
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # Einfache Auto-Fix Logik - kann erweitert werden
+            fixes_applied = []
+            
+            # Beispiel: Fehlende Includes erkennen
+            if '#include "new_switchbot.h"' not in content and 'CSwitchbotManager' in content:
+                include_section = self.find_include_section(content)
+                new_include = '#include "new_switchbot.h"\n'
+                content = content[:include_section] + new_include + content[include_section:]
+                fixes_applied.append("Switchbot include hinzugefügt")
+            
+            if fixes_applied:
+                # Backup erstellen
+                backup_file = file_path + '.backup_' + datetime.now().strftime("%Y%m%d_%H%M%S")
+                with open(backup_file, 'w', encoding='utf-8') as f:
+                    f.write(content)
+                
+                # Fix anwenden
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(content)
+                
+                return {
+                    'success': True,
+                    'message': f"Automatische Fixes angewendet: {', '.join(fixes_applied)}",
+                    'backup_file': backup_file
+                }
+            else:
+                return {
+                    'success': True,
+                    'message': "Keine automatischen Fixes notwendig"
+                }
+                
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e)
+            }
 
 # Utility function for quick AI analysis
 def quick_ai_analysis(code):
