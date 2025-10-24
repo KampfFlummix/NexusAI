@@ -25,7 +25,7 @@ from PIL import Image, ImageTk
 
 # Import the enhanced AI and security modules
 try:
-    from ai_core import NeuralCodeAnalyzer, CodeGenerationEngine, FileIntelligenceSystem, quick_ai_analysis, quick_code_generation
+    from ai_core import NeuralCodeAnalyzer, CodeGenerationEngine, FileIntelligenceSystem, quick_ai_analysis, quick_code_generation, IntelligentCodeMerger, MultilingualCommentDetector, quick_ki_merge
     from security_core import SecurityScanner, quick_security_scan
     from config_system import NexusConfig
 except ImportError as e:
@@ -39,6 +39,25 @@ except ImportError as e:
         def deep_security_scan(self, code): return {}
     class NexusConfig:
         def __init__(self): pass
+    # Fallback für neue Klassen
+    class IntelligentCodeMerger:
+        def smart_merge_files(self, file1, file2): return {'success': False, 'error': 'AI core not available'}
+        def analyze_merge_requirements(self, original, donor): 
+            return {
+                'detected_languages': [],
+                'insertion_points': [],
+                'missing_includes': [],
+                'missing_functions': [],
+                'changes_detected': 0
+            }
+    class MultilingualCommentDetector:
+        def __init__(self):
+            self.patterns = {
+                'german': {'single_line': r'//\s*[^\n]*[äöüßÄÖÜ]', 'multi_line': r'/\*[\s\S]*?[äöüßÄÖÜ][\s\S]*?\*/'},
+                'english': {'single_line': r'//\s*[^\n]*', 'multi_line': r'/\*[\s\S]*?\*/'},
+                'turkish': {'single_line': r'//\s*[^\n]*[çğıöşüÇĞİÖŞÜ]', 'multi_line': r'/\*[\s\S]*?[çğıöşüÇĞİÖŞÜ][\s\S]*?\*/'},
+                'spanish': {'single_line': r'//\s*[^\n]*[áéíóúñÁÉÍÓÚÑ]', 'multi_line': r'/\*[\s\S]*?[áéíóúñÁÉÍÓÚÑ][\s\S]*?\*/'}
+            }
 
 class EnhancedDarkForgeAIEngine:
     """Enhanced AI Engine integrating all AI capabilities"""
@@ -236,8 +255,6 @@ class EnhancedFileSystemController:
         return insights
 
 class NexusCodeEditor:
-    """Advanced Code Editor Core - FIXED LAYOUT VERSION"""
-    
     def __init__(self, root):
         self.root = root
         self.root.title("NEXUS-AI - DarkForge-X Code Platform")
@@ -246,11 +263,13 @@ class NexusCodeEditor:
         # Enhanced core components
         self.ai_engine = EnhancedDarkForgeAIEngine()
         self.fs_controller = EnhancedFileSystemController()
+        self.code_merger = IntelligentCodeMerger()  # <- NEUE KI-MERGE ENGINE
         
         # UI Setup
         self._setup_ui()
         self._setup_menu()
         self._setup_bindings()
+        self._setup_advanced_features()  # <- NEUE ERWEITERTE FEATURES
         
         # Current state
         self.current_file = None
@@ -445,6 +464,259 @@ class NexusCodeEditor:
         self.text_editor.bind('<Control-n>', lambda e: self._new_file())
         self.text_editor.bind('<Control-Shift-S>', lambda e: self._save_file_as())
         
+    def _setup_advanced_features(self):
+        """Setup erweiterte KI-Features für multilinguale Code-Zusammenführung"""
+        self._setup_ki_merge_ui()
+        self._setup_file_comparison()
+    
+    def _setup_ki_merge_ui(self):
+        """UI für KI-gestützte Dateizusammenführung mit multilingualer Unterstützung"""
+        merge_frame = ttk.LabelFrame(self.ai_frame, text="🔄 KI Datei-Merge (Multilingual)", padding="5")
+        merge_frame.pack(fill=tk.X, pady=5)
+        
+        # Merge Buttons
+        ttk.Button(merge_frame, text="📂 Dateien vergleichen & mergen", 
+                  command=self._open_ki_merge_dialog).pack(fill=tk.X, pady=2)
+        
+        ttk.Button(merge_frame, text="🔧 Auto-Fix mit KI", 
+                  command=self._auto_fix_with_ki).pack(fill=tk.X, pady=2)
+        
+        ttk.Button(merge_frame, text="🌍 Multilingual Scan", 
+                  command=self._multilingual_scan).pack(fill=tk.X, pady=2)
+        
+        # Status Label
+        self.merge_status = ttk.Label(merge_frame, text="Bereit für KI-Merge", font=("Segoe UI", 8))
+        self.merge_status.pack(pady=2)
+    
+    def _setup_file_comparison(self):
+        """Setup Dateivergleichs-Features"""
+        # Rechtsklick-Menü für Dateivergleich
+        self.tree_menu = tk.Menu(self.tree, tearoff=0)
+        self.tree_menu.add_command(label="📊 Mit anderer Datei vergleichen", command=self._compare_files)
+        self.tree_menu.add_command(label="🔀 KI-Merge starten", command=self._ki_merge_selected)
+        self.tree.bind("<Button-3>", self._show_tree_menu)
+    
+    def _show_tree_menu(self, event):
+        """Zeigt Rechtsklick-Menü für Dateivergleich"""
+        item = self.tree.identify_row(event.y)
+        if item:
+            self.tree.selection_set(item)
+            self.tree_menu.post(event.x_root, event.y_root)
+    
+    def _open_ki_merge_dialog(self):
+        """Dialog für KI-gestützte Zusammenführung mit multilingualer Unterstützung"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("🌍 KI Datei-Zusammenführung (Multilingual)")
+        dialog.geometry("700x500")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        
+        # Header
+        header = ttk.Label(dialog, text="🔄 Intelligente Code-Zusammenführung", 
+                          font=("Segoe UI", 12, "bold"))
+        header.pack(pady=10)
+        
+        subheader = ttk.Label(dialog, text="Versteht DE/EN/TR/ES Kommentare • Erstellt automatisch Backups",
+                            font=("Segoe UI", 9))
+        subheader.pack(pady=5)
+        
+        # Original Datei
+        ttk.Label(dialog, text="Original Datei (wird geändert):").pack(pady=5)
+        original_frame = ttk.Frame(dialog)
+        original_frame.pack(fill=tk.X, padx=20, pady=5)
+        
+        self.original_entry = ttk.Entry(original_frame, width=60)
+        self.original_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Button(original_frame, text="Durchsuchen", 
+                  command=lambda: self.original_entry.insert(0, filedialog.askopenfilename())).pack(side=tk.RIGHT, padx=5)
+        
+        # Spender Datei
+        ttk.Label(dialog, text="Spender Datei (mit Kommentaren):").pack(pady=5)
+        donor_frame = ttk.Frame(dialog)
+        donor_frame.pack(fill=tk.X, padx=20, pady=5)
+        
+        self.donor_entry = ttk.Entry(donor_frame, width=60)
+        self.donor_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Button(donor_frame, text="Durchsuchen", 
+                  command=lambda: self.donor_entry.insert(0, filedialog.askopenfilename())).pack(side=tk.RIGHT, padx=5)
+        
+        # Vorschau Bereich
+        ttk.Label(dialog, text="Vorschau der Änderungen:").pack(pady=10)
+        self.preview_text = scrolledtext.ScrolledText(dialog, height=12, font=("Consolas", 9))
+        self.preview_text.pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
+        self.preview_text.insert(tk.END, "Vorschau erscheint hier nach Dateiauswahl...")
+        self.preview_text.config(state='disabled')
+        
+        # Buttons
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(fill=tk.X, padx=20, pady=10)
+        
+        ttk.Button(button_frame, text="🔍 Vorschau analysieren", 
+                  command=self._preview_merge).pack(side=tk.LEFT, padx=5)
+        
+        ttk.Button(button_frame, text="🚀 KI-Zusammenführung starten", 
+                  command=self._execute_ki_merge, style="Accent.TButton").pack(side=tk.RIGHT, padx=5)
+    
+    def _preview_merge(self):
+        """Analysiert die Merge-Anforderungen und zeigt Vorschau"""
+        original_file = self.original_entry.get()
+        donor_file = self.donor_entry.get()
+        
+        if not original_file or not donor_file:
+            messagebox.showwarning("Warnung", "Bitte beide Dateien auswählen!")
+            return
+        
+        try:
+            # Analysiere die Merge-Anforderungen
+            with open(original_file, 'r', encoding='utf-8') as f:
+                original_content = f.read()
+            with open(donor_file, 'r', encoding='utf-8') as f:
+                donor_content = f.read()
+            
+            analysis = self.code_merger.analyze_merge_requirements(original_content, donor_content)
+            
+            # Zeige Vorschau
+            self.preview_text.config(state='normal')
+            self.preview_text.delete(1.0, tk.END)
+            
+            preview_content = f"""🔍 **KI-MERGE VORSCHAU**
+
+📁 Original: {Path(original_file).name}
+📁 Spender: {Path(donor_file).name}
+
+🌍 ERKANNTE SPRACHEN: {', '.join(analysis['detected_languages']) or 'Keine'}
+
+📊 ZUSAMMENFASSUNG:
+• {len(analysis['insertion_points'])} Insertions-Punkte gefunden
+• {len(analysis['missing_includes'])} fehlende Includes
+• {len(analysis['missing_functions'])} fehlende Funktionen
+• {analysis['changes_detected']} gesamte Änderungen
+
+📍 INSERTIONS-PUNKTE:
+"""
+            for point in analysis['insertion_points']:
+                preview_content += f"• {point['language'].upper()}: {point['type']} -> {point['target_name'] or 'Allgemein'}\n"
+            
+            if analysis['missing_includes']:
+                preview_content += f"\n📦 FEHLENDE INCLUDES:\n" + "\n".join(f"• {inc}" for inc in analysis['missing_includes'])
+            
+            if analysis['missing_functions']:
+                preview_content += f"\n🔧 FEHLENDE FUNKTIONEN:\n" + "\n".join(f"• {func}" for func in analysis['missing_functions'])
+            
+            self.preview_text.insert(tk.END, preview_content)
+            self.preview_text.config(state='disabled')
+            
+        except Exception as e:
+            messagebox.showerror("Fehler", f"Vorschau fehlgeschlagen: {str(e)}")
+    
+    def _execute_ki_merge(self):
+        """Führt die KI-Zusammenführung durch"""
+        original_file = self.original_entry.get()
+        donor_file = self.donor_entry.get()
+        
+        if not original_file or not donor_file:
+            messagebox.showwarning("Warnung", "Bitte beide Dateien auswählen!")
+            return
+        
+        # Fortschritt anzeigen
+        self.merge_status.config(text="🔄 Führe KI-Merge durch...")
+        
+        def do_merge():
+            result = self.code_merger.smart_merge_files(original_file, donor_file)
+            
+            # UI-Update im Hauptthread
+            self.root.after(0, lambda: self._show_merge_result(result))
+        
+        # Im Thread ausführen
+        threading.Thread(target=do_merge, daemon=True).start()
+    
+    def _show_merge_result(self, result):
+        """Zeigt das Ergebnis des KI-Merges"""
+        if result['success']:
+            messagebox.showinfo("🎉 Erfolg!", 
+                f"KI-Zusammenführung abgeschlossen!\n\n"
+                f"✅ {result['changes_made']} Änderungen durchgeführt\n"
+                f"💾 Backup: {Path(result['backup_file']).name}\n"
+                f"📄 Ergebnis: {Path(result['output_file']).name}\n\n"
+                f"{result['message']}")
+            
+            self.merge_status.config(text=f"✅ Merge abgeschlossen - {result['changes_made']} Änderungen")
+            self._display_ai_response(f"**🔀 KI-Merge abgeschlossen:** {result['message']}\n\n")
+            
+        else:
+            messagebox.showerror("❌ Fehler", 
+                f"KI-Zusammenführung fehlgeschlagen:\n{result['error']}")
+            self.merge_status.config(text="❌ Merge fehlgeschlagen")
+    
+    def _auto_fix_with_ki(self):
+        """Automatisch fehlende Code-Teile mit KI erkennen und beheben"""
+        if not self.current_file:
+            messagebox.showwarning("Warnung", "Keine Datei geöffnet!")
+            return
+        
+        self._display_ai_response("🔧 **Starte Auto-Fix Analyse...**\n\n")
+        
+        # Hier könnte erweiterte Auto-Fix Logik implementiert werden
+        self._display_ai_response("✅ **Auto-Fix bereit** - Verwende KI-Merge für spezifische Code-Ergänzungen\n\n")
+    
+    def _multilingual_scan(self):
+        """Scannt Dateien nach multilingualen Kommentaren"""
+        if not self.current_file:
+            messagebox.showwarning("Warnung", "Keine Datei geöffnet!")
+            return
+        
+        try:
+            with open(self.current_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            detector = MultilingualCommentDetector()
+            found_comments = []
+            
+            for lang_name, patterns in detector.patterns.items():
+                for pattern_type, pattern in patterns.items():
+                    matches = re.findall(pattern, content, re.IGNORECASE | re.MULTILINE)
+                    for match in matches:
+                        found_comments.append({
+                            'language': lang_name,
+                            'type': pattern_type,
+                            'text': match[:100] + "..." if len(match) > 100 else match
+                        })
+            
+            if found_comments:
+                report = "🌍 **Multilingualer Scan - Gefundene Kommentare:**\n\n"
+                for comment in found_comments:
+                    report += f"• {comment['language'].upper()}: {comment['type']}\n"
+                    report += f"  └─ {comment['text']}\n\n"
+                
+                self._display_ai_response(report)
+            else:
+                self._display_ai_response("🔍 **Keine multilingualen Kommentare gefunden**\n\n")
+                
+        except Exception as e:
+            self._display_ai_response(f"❌ **Scan-Fehler:** {str(e)}\n\n")
+    
+    def _compare_files(self):
+        """Vergleicht zwei Dateien"""
+        file1 = self.tree.item(self.tree.selection()[0], 'values')[0]
+        file2 = filedialog.askopenfilename(title="Zweite Datei auswählen")
+        
+        if file2:
+            self._open_ki_merge_dialog()
+            self.original_entry.delete(0, tk.END)
+            self.original_entry.insert(0, file1)
+            self.donor_entry.delete(0, tk.END)
+            self.donor_entry.insert(0, file2)
+            self._preview_merge()
+    
+    def _ki_merge_selected(self):
+        """Startet KI-Merge für ausgewählte Datei"""
+        selected_file = self.tree.item(self.tree.selection()[0], 'values')[0]
+        donor_file = filedialog.askopenfilename(title="Spender-Datei auswählen")
+        
+        if donor_file:
+            result = self.code_merger.smart_merge_files(selected_file, donor_file)
+            self._show_merge_result(result)
+    
     def _process_ai_command(self, event=None):
         """Process AI commands and queries"""
         command = self.ai_entry.get().strip()
