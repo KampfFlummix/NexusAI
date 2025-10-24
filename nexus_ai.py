@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 NEXUS-AI - Autonomous Code Editor with AI Intelligence
-DarkForge-X Replication System - FIXED LAYOUT VERSION
+DarkForge-X Replication System - FIXED & ENHANCED VERSION
 """
 
 import os
@@ -16,33 +16,65 @@ import time
 import re
 from pathlib import Path
 import mimetypes
-import markdown
-import websocket
 import uuid
 import ast
-import tokenize
-from PIL import Image, ImageTk
 
-# Import the enhanced AI and security modules
+# Import the enhanced AI and security modules - FIXED IMPORTS
 try:
-    from ai_core import NeuralCodeAnalyzer, CodeGenerationEngine, FileIntelligenceSystem, quick_ai_analysis, quick_code_generation, IntelligentCodeMerger, MultilingualCommentDetector, quick_ki_merge
-    from security_core import SecurityScanner, quick_security_scan
+    from ai_core import NeuralCodeAnalyzer, CodeGenerationEngine, FileIntelligenceSystem, IntelligentCodeMerger, MultilingualCommentDetector
+    from security_core import SecurityScanner
     from config_system import NexusConfig
+    AI_MODULES_AVAILABLE = True
 except ImportError as e:
-    print(f"Import warning: {e}")
-    # Fallback implementations
+    print(f"AI modules not available: {e}")
+    AI_MODULES_AVAILABLE = False
+    # Enhanced fallback implementations
     class NeuralCodeAnalyzer:
-        def deep_code_analysis(self, code, language): return {}
+        def deep_code_analysis(self, code, language): 
+            return {
+                'vulnerability_assessment': {'risk_level': 'UNKNOWN', 'issues_found': 0},
+                'maintainability_score': {'score': 0, 'maintainability_level': 'UNKNOWN'},
+                'complexity_analysis': {'complexity_level': 'UNKNOWN'},
+                'security_scan': [],
+                'performance_scan': [],
+                'ai_suggestions': [],
+                'code_metrics': {'total_lines': len(code.split('\n'))}
+            }
+    
     class CodeGenerationEngine:
-        def generate_from_prompt(self, prompt, context=None): return "# AI code generation"
+        def generate_from_prompt(self, prompt, context=None): 
+            return f'''# AI-Generated Code
+# Prompt: {prompt}
+
+def ai_generated_function():
+    """AI-generated function placeholder"""
+    print("🤖 AI Code Generation - Replace with your logic")
+    return None
+'''
+    
     class SecurityScanner:
-        def deep_security_scan(self, code): return {}
+        def deep_security_scan(self, code): 
+            return {
+                'summary': {'overall_risk': 'UNKNOWN', 'total_vulnerabilities': 0},
+                'vulnerabilities': []
+            }
+    
     class NexusConfig:
-        def __init__(self): pass
-    # Fallback für neue Klassen
+        def __init__(self): 
+            self.config = {'ai': {'auto_suggest': True}}
+        def get_setting(self, section, key, default=None): return default
+    
+    class FileIntelligenceSystem:
+        def analyze_file_structure(self, path): return {}
+    
     class IntelligentCodeMerger:
-        def smart_merge_files(self, file1, file2): return {'success': False, 'error': 'AI core not available'}
-        def analyze_merge_requirements(self, original, donor): 
+        def smart_merge_files(self, file1, file2): 
+            return {
+                'success': False, 
+                'error': 'AI core not available',
+                'message': '❌ AI modules not installed'
+            }
+        def analyze_merge_requirements(self, original, donor):
             return {
                 'detected_languages': [],
                 'insertion_points': [],
@@ -50,30 +82,51 @@ except ImportError as e:
                 'missing_functions': [],
                 'changes_detected': 0
             }
+    
     class MultilingualCommentDetector:
         def __init__(self):
             self.patterns = {
-                'german': {'single_line': r'//\s*[^\n]*[äöüßÄÖÜ]', 'multi_line': r'/\*[\s\S]*?[äöüßÄÖÜ][\s\S]*?\*/'},
-                'english': {'single_line': r'//\s*[^\n]*', 'multi_line': r'/\*[\s\S]*?\*/'},
-                'turkish': {'single_line': r'//\s*[^\n]*[çğıöşüÇĞİÖŞÜ]', 'multi_line': r'/\*[\s\S]*?[çğıöşüÇĞİÖŞÜ][\s\S]*?\*/'},
-                'spanish': {'single_line': r'//\s*[^\n]*[áéíóúñÁÉÍÓÚÑ]', 'multi_line': r'/\*[\s\S]*?[áéíóúñÁÉÍÓÚÑ][\s\S]*?\*/'}
+                'german': {
+                    'single_line': r'//\s*[^\n]*[äöüßÄÖÜ]',
+                    'multi_line': r'/\*[\s\S]*?[äöüßÄÖÜ][\s\S]*?\*/'
+                },
+                'english': {
+                    'single_line': r'//\s*[^\n]*',
+                    'multi_line': r'/\*[\s\S]*?\*/'
+                },
+                'turkish': {
+                    'single_line': r'//\s*[^\n]*[çğıöşüÇĞİÖŞÜ]',
+                    'multi_line': r'/\*[\s\S]*?[çğıöşüÇĞİÖŞÜ][\s\S]*?\*/'
+                },
+                'spanish': {
+                    'single_line': r'//\s*[^\n]*[áéíóúñÁÉÍÓÚÑ]',
+                    'multi_line': r'/\*[\s\S]*?[áéíóúñÁÉÍÓÚÑ][\s\S]*?\*/'
+                }
             }
+
+# Try to import PIL for icons, but make it optional
+try:
+    from PIL import Image, ImageTk
+    HAS_PIL = True
+except ImportError:
+    HAS_PIL = False
+    print("PIL not available - icons disabled")
 
 class EnhancedDarkForgeAIEngine:
     """Enhanced AI Engine integrating all AI capabilities"""
     
     def __init__(self):
-        try:
+        if AI_MODULES_AVAILABLE:
             self.analyzer = NeuralCodeAnalyzer()
             self.generator = CodeGenerationEngine()
             self.security_scanner = SecurityScanner()
             self.config = NexusConfig()
-        except:
-            # Fallback if modules not available
+        else:
+            # Use fallback implementations
             self.analyzer = NeuralCodeAnalyzer()
             self.generator = CodeGenerationEngine()
             self.security_scanner = SecurityScanner()
-            self.config = None
+            self.config = NexusConfig()
         
     def analyze_code(self, code, language):
         """Comprehensive code analysis using enhanced AI"""
@@ -157,7 +210,7 @@ I've processed your command: *"{command}"*
     def _handle_file_operations(self, command, file_context, project_context):
         """Handle file system related commands"""
         if 'list' in command or 'show' in command or 'explorer' in command:
-            return "📁 **File Explorer**\n\nUse the file tree on the left to navigate directories and open files.\n\n**Quick Actions:**\n• Click folders to expand\n• Double-click files to open\n• Use toolbar for operations"
+            return "📁 **File Explorer**\n\nUse the file explorer on the left to navigate directories and open files.\n\n**Quick Actions:**\n• Click folders to expand\n• Double-click files to open\n• Use toolbar for operations"
         return "📁 **File System Help**\n\nUse the file explorer panel for all file operations."
 
 class EnhancedFileSystemController:
@@ -263,13 +316,13 @@ class NexusCodeEditor:
         # Enhanced core components
         self.ai_engine = EnhancedDarkForgeAIEngine()
         self.fs_controller = EnhancedFileSystemController()
-        self.code_merger = IntelligentCodeMerger()  # <- NEUE KI-MERGE ENGINE
+        self.code_merger = IntelligentCodeMerger()  # KI-Merge Engine
         
         # UI Setup
         self._setup_ui()
         self._setup_menu()
         self._setup_bindings()
-        self._setup_advanced_features()  # <- NEUE ERWEITERTE FEATURES
+        self._setup_advanced_features()  # Enhanced features
         
         # Current state
         self.current_file = None
@@ -299,10 +352,10 @@ class NexusCodeEditor:
         
     def _setup_file_explorer(self):
         """Advanced file explorer panel - FIXED WIDTH ISSUE"""
-        # File explorer frame - width is set during creation, not in pack
+        # File explorer frame - fixed width
         self.explorer_frame = ttk.LabelFrame(self.main_frame, text="📁 File System", padding="5", width=300)
         self.explorer_frame.pack(side=tk.LEFT, fill=tk.Y, padx=5, pady=5)
-        self.explorer_frame.pack_propagate(False)  # Prevent frame from resizing to content
+        self.explorer_frame.pack_propagate(False)  # Prevent frame from resizing
         
         # Search box
         search_frame = ttk.Frame(self.explorer_frame)
@@ -371,10 +424,10 @@ class NexusCodeEditor:
         
     def _setup_ai_panel(self):
         """AI Assistant interaction panel - FIXED WIDTH ISSUE"""
-        # AI frame - width is set during creation, not in pack
+        # AI frame - fixed width
         self.ai_frame = ttk.LabelFrame(self.main_frame, text="🤖 DarkForge-X AI Assistant", padding="5", width=400)
         self.ai_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=5, pady=5)
-        self.ai_frame.pack_propagate(False)  # Prevent frame from resizing to content
+        self.ai_frame.pack_propagate(False)  # Prevent frame from resizing
         
         # AI chat display
         self.ai_chat = scrolledtext.ScrolledText(self.ai_frame, height=15, state='normal',
@@ -456,6 +509,9 @@ class NexusCodeEditor:
         ai_menu.add_command(label="Analyze Code", command=self._ai_analyze_code)
         ai_menu.add_command(label="Generate Code", command=self._ai_generate_code)
         ai_menu.add_command(label="Security Scan", command=self._ai_security_scan)
+        ai_menu.add_separator()
+        ai_menu.add_command(label="KI File Merge", command=self._open_ki_merge_dialog)
+        ai_menu.add_command(label="Multilingual Scan", command=self._multilingual_scan)
         
     def _setup_bindings(self):
         """Setup keyboard bindings"""
@@ -528,7 +584,7 @@ class NexusCodeEditor:
         self.original_entry = ttk.Entry(original_frame, width=60)
         self.original_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
         ttk.Button(original_frame, text="Durchsuchen", 
-                  command=lambda: self.original_entry.insert(0, filedialog.askopenfilename())).pack(side=tk.RIGHT, padx=5)
+                  command=lambda: self._browse_file(self.original_entry)).pack(side=tk.RIGHT, padx=5)
         
         # Spender Datei
         ttk.Label(dialog, text="Spender Datei (mit Kommentaren):").pack(pady=5)
@@ -538,7 +594,7 @@ class NexusCodeEditor:
         self.donor_entry = ttk.Entry(donor_frame, width=60)
         self.donor_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
         ttk.Button(donor_frame, text="Durchsuchen", 
-                  command=lambda: self.donor_entry.insert(0, filedialog.askopenfilename())).pack(side=tk.RIGHT, padx=5)
+                  command=lambda: self._browse_file(self.donor_entry)).pack(side=tk.RIGHT, padx=5)
         
         # Vorschau Bereich
         ttk.Label(dialog, text="Vorschau der Änderungen:").pack(pady=10)
@@ -555,7 +611,14 @@ class NexusCodeEditor:
                   command=self._preview_merge).pack(side=tk.LEFT, padx=5)
         
         ttk.Button(button_frame, text="🚀 KI-Zusammenführung starten", 
-                  command=self._execute_ki_merge, style="Accent.TButton").pack(side=tk.RIGHT, padx=5)
+                  command=self._execute_ki_merge).pack(side=tk.RIGHT, padx=5)
+    
+    def _browse_file(self, entry_widget):
+        """Open file browser and insert path into entry widget"""
+        file_path = filedialog.askopenfilename()
+        if file_path:
+            entry_widget.delete(0, tk.END)
+            entry_widget.insert(0, file_path)
     
     def _preview_merge(self):
         """Analysiert die Merge-Anforderungen und zeigt Vorschau"""
@@ -635,17 +698,17 @@ class NexusCodeEditor:
         if result['success']:
             messagebox.showinfo("🎉 Erfolg!", 
                 f"KI-Zusammenführung abgeschlossen!\n\n"
-                f"✅ {result['changes_made']} Änderungen durchgeführt\n"
-                f"💾 Backup: {Path(result['backup_file']).name}\n"
-                f"📄 Ergebnis: {Path(result['output_file']).name}\n\n"
-                f"{result['message']}")
+                f"✅ {result.get('changes_made', 0)} Änderungen durchgeführt\n"
+                f"💾 Backup: {Path(result.get('backup_file', '')).name}\n"
+                f"📄 Ergebnis: {Path(result.get('output_file', '')).name}\n\n"
+                f"{result.get('message', 'Erfolgreich abgeschlossen')}")
             
-            self.merge_status.config(text=f"✅ Merge abgeschlossen - {result['changes_made']} Änderungen")
-            self._display_ai_response(f"**🔀 KI-Merge abgeschlossen:** {result['message']}\n\n")
+            self.merge_status.config(text=f"✅ Merge abgeschlossen - {result.get('changes_made', 0)} Änderungen")
+            self._display_ai_response(f"**🔀 KI-Merge abgeschlossen:** {result.get('message', 'Erfolg')}\n\n")
             
         else:
             messagebox.showerror("❌ Fehler", 
-                f"KI-Zusammenführung fehlgeschlagen:\n{result['error']}")
+                f"KI-Zusammenführung fehlgeschlagen:\n{result.get('error', 'Unbekannter Fehler')}")
             self.merge_status.config(text="❌ Merge fehlgeschlagen")
     
     def _auto_fix_with_ki(self):
@@ -697,25 +760,31 @@ class NexusCodeEditor:
     
     def _compare_files(self):
         """Vergleicht zwei Dateien"""
-        file1 = self.tree.item(self.tree.selection()[0], 'values')[0]
-        file2 = filedialog.askopenfilename(title="Zweite Datei auswählen")
-        
-        if file2:
-            self._open_ki_merge_dialog()
-            self.original_entry.delete(0, tk.END)
-            self.original_entry.insert(0, file1)
-            self.donor_entry.delete(0, tk.END)
-            self.donor_entry.insert(0, file2)
-            self._preview_merge()
+        try:
+            file1 = self.tree.item(self.tree.selection()[0], 'values')[0]
+            file2 = filedialog.askopenfilename(title="Zweite Datei auswählen")
+            
+            if file2:
+                self._open_ki_merge_dialog()
+                self.original_entry.delete(0, tk.END)
+                self.original_entry.insert(0, file1)
+                self.donor_entry.delete(0, tk.END)
+                self.donor_entry.insert(0, file2)
+                self._preview_merge()
+        except IndexError:
+            messagebox.showwarning("Warnung", "Bitte wählen Sie zuerst eine Datei im Explorer aus!")
     
     def _ki_merge_selected(self):
         """Startet KI-Merge für ausgewählte Datei"""
-        selected_file = self.tree.item(self.tree.selection()[0], 'values')[0]
-        donor_file = filedialog.askopenfilename(title="Spender-Datei auswählen")
-        
-        if donor_file:
-            result = self.code_merger.smart_merge_files(selected_file, donor_file)
-            self._show_merge_result(result)
+        try:
+            selected_file = self.tree.item(self.tree.selection()[0], 'values')[0]
+            donor_file = filedialog.askopenfilename(title="Spender-Datei auswählen")
+            
+            if donor_file:
+                result = self.code_merger.smart_merge_files(selected_file, donor_file)
+                self._show_merge_result(result)
+        except IndexError:
+            messagebox.showwarning("Warnung", "Bitte wählen Sie zuerst eine Datei im Explorer aus!")
     
     def _process_ai_command(self, event=None):
         """Process AI commands and queries"""
@@ -801,8 +870,37 @@ class NexusCodeEditor:
     
     def _filter_file_tree(self, event=None):
         """Filter file tree based on search"""
-        # This would implement search filtering
-        pass
+        # Basic search implementation
+        search_term = self.search_var.get().lower()
+        if not search_term:
+            # Show all items if search is empty
+            for item in self.tree.get_children():
+                self.tree.item(item, tags=())
+            return
+        
+        # Hide all items first
+        for item in self.tree.get_children():
+            self.tree.item(item, tags=('hidden',))
+        
+        # Show matching items
+        def check_item(item):
+            text = self.tree.item(item, 'text').lower()
+            values = self.tree.item(item, 'values')
+            value_text = ' '.join(str(v).lower() for v in values) if values else ''
+            
+            if search_term in text or search_term in value_text:
+                self.tree.item(item, tags=())
+                # Expand parent to show matched child
+                parent = self.tree.parent(item)
+                if parent:
+                    self.tree.item(parent, open=True)
+                    check_item(parent)  # Recursively show parents
+                return True
+            return False
+        
+        # Check all items
+        for item in self.tree.get_children():
+            check_item(item)
     
     def _on_tree_double_click(self, event):
         """Handle double-click on tree items"""

@@ -1,4 +1,18 @@
-PyInstaller>=5.0.0
+# NEXUS-AI Requirements
+# Core dependencies for the AI Code Editor
+
+# GUI Framework
+tkinter
+
+# Image processing for icons (optional)
 Pillow>=9.0.0
-markdown>=3.4.0
-websocket-client>=1.5.0
+
+# Build tool
+pyinstaller>=5.0.0
+
+# Enhanced dependencies (optional but recommended)
+# markdown>=3.4.0
+# websocket-client>=1.5.0
+
+# Note: Most dependencies are included in standard Python distribution
+# Only Pillow and PyInstaller need to be installed via pip
